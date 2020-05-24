@@ -66,23 +66,6 @@ class qradar(object):
         else:
             filter = ''
         return qradar.qry_get(self, '{}{}'.format(self.offenses, filter))
-
-    def get_offense_types(self):
-        return qradar.qry_get(self, '{}'.format(self.offense_types))
-    
-    def check_offense_type_name_in_offense(self, type_id):
-        types = self.get_offense_types()
-        for i in types:
-            if type_id == i['id']:
-                index_name = i['name']
-                return index_name
-
-    def check_offense_type_property_in_offense(self, type_id):
-        types = self.get_offense_types()
-        for i in types:
-            if type_id == i['id']:
-                index_name = i['property_name']
-                return index_name
     
     def get_offense_details(self, offenseid):
         return qradar.qry_get(self,'{}/{}'.format(self.offenses, offenseid))
@@ -109,10 +92,28 @@ class qradar(object):
         return qradar.qry_get(self, '{}'.format(self.building_blocks))
 
     def get_rule_name(self, rule_id):
-        return qradar.qry_get(self,'{}/{}'.format(self.rules, rule_id))        
+        return qradar.qry_get(self,'{}/{}'.format(self.rules, rule_id))
+
+    def get_offense_types(self):
+        return qradar.qry_get(self, '{}'.format(self.offense_types))
+    
+    def check_offense_type_name_in_offense(self, type_id):
+        types = self.get_offense_types()
+        for i in types:
+            if type_id == i['id']:
+                index_name = i['name']
+                return index_name
+
+    def check_offense_type_property_in_offense(self, type_id):
+        types = self.get_offense_types()
+        for i in types:
+            if type_id == i['id']:
+                index_name = i['property_name']
+                return index_name
 
     def get_logsources(self, max_items=None, enabled=None):
-        ##To filter disabled enabled=True. ## https://server.com/api/siem/offenses?filter=status%3D%22OPEN%22
+        ##https://server.com/api/siem/offenses?filter=status%3D%22OPEN%22
+        ##To filter disabled enabled=True.
         ##To limit max_items=99
         if max_items:
             self.headers.update({"Range": "items=0-%d" % max_items})
