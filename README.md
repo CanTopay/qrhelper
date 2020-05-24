@@ -1,2 +1,2 @@
 # qradar-helper
-a nifty Ibm Qradar helper library
+An helper class for IBM QRadar
