@@ -19,6 +19,7 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+
 class qrhelper(object):
     def __init__(self, qrurl, qrtoken, apiver, verify=False):
         self.qrurl = qrurl
