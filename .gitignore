@@ -131,3 +131,5 @@ dmypy.json
 # Macbook Dir
 .DS_Store
 .vscode/
+*.pem
+*.cer

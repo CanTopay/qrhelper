@@ -1,12 +1,10 @@
 ####by CanT####
-######v.5######
 import os
 import requests
 import json
 import time
 import logging
 import urllib3
-
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 #Enable logging
@@ -24,7 +22,6 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 class qrhelper(object):
-#Better to enable verification in prd. => verify=True
     def __init__(self, qrurl, qrtoken, apiver, verify=False):
         self.qrurl = qrurl
         self.offenses = '/api/siem/offenses'
@@ -40,6 +37,7 @@ class qrhelper(object):
         self.local_destination_addresses = '/api/siem/local_destination_addresses/{}'
         self.headers = {"Accept": "application/json", "Content-Type": "application/json", "Version": apiver ,"SEC": qrtoken}
         self.verify = verify
+        #Better to verify TLS in prd. => verify=True
 
     def qr_get(self, endpoint_url):
         result = None
@@ -54,12 +52,12 @@ class qrhelper(object):
             logger.error('API Error. Failed GET:{}'.format(e))
         return result
     
-    def qr_post(self, endpoint_url, data=None):
+    def qr_post(self, endpoint_url, params = None, data=None):
         result = None
         #data = {"query_expression": qry_ex}
         try:
-            response = requests.post(url='{}{}'.format(self.qrurl, endpoint_url), params=(data), headers=self.headers, verify=False)
-            if response.status_code == 201:
+            response = requests.post(url='{}{}'.format(self.qrurl, endpoint_url), params=params, data=json.dumps(data), headers=self.headers, verify=False)
+            if response.status_code == 200 or response.status_code == 201:
                 resp_json = json.loads(response.content)
                 result = resp_json
             else:
@@ -110,14 +108,14 @@ class qrhelper(object):
     def get_offense_types(self):
         return qrhelper.qr_get(self, '{}'.format(self.offense_types))
     
-    def check_offense_type_name(self, type_id):
+    def get_offense_type_name(self, type_id):
         types = self.get_offense_types()
         for i in types:
             if type_id == i['id']:
                 index_name = i['name']
                 return index_name
 
-    def check_offense_type_property(self, type_id):
+    def get_offense_type_property(self, type_id):
         types = self.get_offense_types()
         for i in types:
             if type_id == i['id']:
@@ -135,14 +133,48 @@ class qrhelper(object):
         else:
             filter = ''
         return qrhelper.qr_get(self, '{}{}'.format(self.log_sources, filter))
+    
+    def get_refset(self, refset):
+        return qrhelper.qr_get(self, '{}/sets/{}'.format(self.reference_data, refset))
+
+    def get_refmap(self, refmap):
+        # #./ReferenceDataUtil.sh create userDataMap MAP ALN
+        return qrhelper.qr_get(self, '{}/maps/{}'.format(self.reference_data, refmap))
+    
+    def get_reftable(self, reftable):
+        # #./ReferenceDataUtil.sh create UsrDataTable REFTABLE ALN -keyType=ip:IP, hostname:ALNIC, email:ALN, employeeid:ALN, vuln:ALN
+        return qrhelper.qr_get(self, '{}/tables/{}'.format(self.reference_data, reftable))
+
+    def post_refset(self, refset, value):
+        #Data format should match the data type of refset - IP, ALN, etc.
+        return qrhelper.qr_post(self, '{}/sets/{}?value={}'.format(self.reference_data, refset, value))
+
+    def post_refmap(self, refmap, json_data):
+        # #./ReferenceDataUtil.sh create userDataMap MAP ALN
+        # # Data should be in dict with key/value static mappings: {"key":"CAN","value":"192.168.1.1"}
+        return qrhelper.qr_post(self, '{}/maps/{}'.format(self.reference_data, refmap), params=json_data)
+
+    def post_bulkrefmap(self, refmap, json_data):
+        # # Data should be in Json/dict with unique keys and assigned value pairs: {"CAN":"192.168.1.1", "ADMIN":"192.168.1.1", "GUEST":"192.168.1.9"}
+        return qrhelper.qr_post(self, '{}/maps/bulk_load/{}'.format(self.reference_data, refmap), data=json_data)
+
+    def post_reftable(self, reftable, json_data):
+        # # Data should be in Json/dict with outer and inner key mappings and values: {"outer_key":"CAN", "inner_key": "ip", "value":"192.168.1.1"}
+        # # Dont forget key types while preparing data: UsrDataTable REFTABLE ALN -keyType=ip:IP, hostname:ALNIC, email:ALN, employeeid:ALN, vuln:ALN
+        return qrhelper.qr_post(self, '{}/tables/{}'.format(self.reference_data, reftable), params=json_data)
+
+    def post_bulkreftable(self, reftable, json_data):
+        # # Data should be in Json/dict with outer/inner keys and values: {"ADMIN":{"ip":"192.168.1.1", "hostname":"ADMINSYS", "email":"admin@admin.com","employeeid":"999","vuln":"INFO-99"}}
+        # # Dont forget key types while preparing data: UsrDataTable REFTABLE ALN -keyType=ip:IP, hostname:ALNIC, email:ALN, employeeid:ALN, vuln:ALN
+        return qrhelper.qr_post(self, '{}/tables/bulk_load/{}'.format(self.reference_data, reftable), data=json_data)
 
     def post_offense_note(self, offenseid, note_text):
         return qrhelper.qr_post(self,'{}/{}/notes?note_text={}'.format(self.offenses, offenseid, note_text))
     
     def post_aql(self, qry_ex):
         search_id = None
-        data = {'query_expression': qry_ex}
-        search_id = qrhelper.qr_post(self, '{}'.format(self.searches), data=data)['search_id']
+        qry = {'query_expression': qry_ex}
+        search_id = qrhelper.qr_post(self, '{}'.format(self.searches), params=qry)['search_id']
         if search_id:
             logger.info('AQL post successful.search_id:{}'.format(search_id))
         return search_id
@@ -158,8 +190,8 @@ class qrhelper(object):
 
     def run_aql(self, qry_ex):
     #NOTE: run_aql() can take long time and might hammer the system if you have many results or long timeframes.
-    # #Therefore I limited execs to 10 and put a sleep for 1 secs between execs.
-    # #If you need longer time frames; use above post/get_aql queries by keeping-posting the search_id's.
+    # #Therefore I limit execs up to 10 and put a sleep for 1 secs between them.
+    # #If you need more/longer time frames, either change timer or use above post and later get queries using saved search_id's.
         results = None
         data = {'query_expression': qry_ex}
         search_id = qrhelper.post_aql(self, qry_ex)
@@ -177,23 +209,30 @@ class qrhelper(object):
         response = qrhelper.qr_get(self, '{}?filter=text%3D%22{}%22'.format(self.offense_closing_reasons, closing_reason_text))
         if response:
             id = response[0]['id']
-            try:
-                response = requests.post(url='{}{}/{}?closing_reason_id={}&status=CLOSED'.format(self.qrurl, self.offenses, offense_id, id),
-                headers=self.headers, verify=self.verify)
-                if response.status_code == 200:
-                    resp_json = json.loads(response.content)
-                    if resp_json['status'] == 'CLOSED':
-                        logger.info('Offense Closed.Offense ID:{}'.format(offense_id))
-                        closed = True
-                else:
-                    logger.error('Cannot post data.:{}-{}'.format(response.status_code,response.content))
-            except Exception as e:
-                logger.error('API Error. Failed POST:{}'.format(e))
+            resp_close = qrhelper.qr_post(self, '{}/{}?closing_reason_id={}&status=CLOSED'.format(self.offenses, offense_id, id))
+            if resp_close and resp_close['status'] == 'CLOSED':
+                logger.info('Offense Closed.Offense ID:{}'.format(offense_id))
+                closed = True
+            else:
+                logger.error('Cannot close offense.Offense ID:{}'.format(offense_id))
         else:
             logger.error('Çannot find Closing Reason ID. Check logs and closing reason text:{}'.format(closing_reason_text))
         return closed
 
-# a = qrhelper('https://192.168.0.246','745a0975-d47f-4340-b821-26e1888f1355','12.0')
-# #qry = "SELECT * FROM events START '2020-06-10 10:00' STOP '2020-06-10 13:00'"
-# #a.run_aql(q)
-# a.close_offense(1,'Non-Issue')
+# #Exp Usage:
+# a = qrhelper('https://192.168.1.1','token-xxxx-xxxx-xxxx-xxxxxxxxxxx','12.0')
+# print(a.get_refset('QRadar Deployment'))
+# print(a.post_refset('Critical Assets','192.168.199.199'))
+# print(a.get_refmap('userDataMap'))
+# print(a.get_reftable('UsrDataTable'))
+# json_data = {"key":"CAN","value":"192.168.1.1"}
+# print(a.post_refmap('userDataMap', json_data))
+# json_data = {"CAN":"192.168.1.1", "ADMIN":"192.168.1.1", "GUEST":"192.168.1.9"}
+# print(a.post_bulkrefmap('userDataMap', json_data))
+# json_data = {"outer_key":"CAN", "inner_key": "ip", "value":"192.168.1.1"}
+# print(a.post_reftable('UsrDataTable', json_data))
+# json_data = {"ADMIN":{"ip":"192.168.1.1", "hostname":"ADMINSYS", "email":"admin@admin.com","employeeid":"999","vuln":"INFO-99"}}
+# print(a.post_bulkreftable('UsrDataTable', json_data))
+# qry = "SELECT * FROM events START '2020-06-10 10:00' STOP '2020-06-10 13:00'"
+# print(a.run_aql(qry))
+# a.close_offense(6,'Non-Issue')
