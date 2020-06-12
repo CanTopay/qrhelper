@@ -1,6 +1,5 @@
 # QRHELPER
-An nifty helper class for some common thingys of IBM QRadar SIEM.
-
+An nifty helper class for simplfying some common operations on IBM QRadar SIEM API.
 
 # Usage:
 Provide below params while instancing the class;
