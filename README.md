@@ -1,5 +1,6 @@
-# qrhelper
-An nifty helper class for some common thingys of IBM QRadar.
+# QRHELPER
+An nifty helper class for some common thingys of IBM QRadar SIEM.
+
 
 # Usage:
 Provide below params while instancing the class;
@@ -7,13 +8,15 @@ Provide below params while instancing the class;
 - Qradar API Token (Authorized Service)
 - API Version
 - TSL Verification (Default = False)
-
+  
 Exp Usage:
 - a = qrhelper('https://192.168.1.1', 'token-xxxx-xxxx-xxxx-xxxxxxxxxxx', '12.0')
 - a.close_offense(999, 'Non-Issue')
-
-# List of Functions
+- Also check inline comments for more examples and format.
   
+Note: Supports logging to a file in script directory(qrhelper.py.log) and also console output.
+
+# List of Functions  
 -    get_offenses: Get the offense list, supports filtering by open ones and max item count.
 -    get_offense_details
 -    get_offense_notes

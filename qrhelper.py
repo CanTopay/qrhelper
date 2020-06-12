@@ -56,6 +56,7 @@ class qrhelper(object):
         try:
             response = requests.post(url='{}{}'.format(self.qrurl, endpoint_url), params=params, data=json.dumps(data), headers=self.headers, verify=False)
             if response.status_code == 200 or response.status_code == 201:
+                logger.info('POST successful to endpoint:{}'.format(endpoint_url))
                 resp_json = json.loads(response.content)
                 result = resp_json
             else:

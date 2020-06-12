@@ -133,3 +133,4 @@ dmypy.json
 .vscode/
 *.pem
 *.cer
+tester.py
