@@ -1,4 +1,3 @@
-####by CanT####
 import os
 import requests
 import json
@@ -20,7 +19,6 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
 class qrhelper(object):
     def __init__(self, qrurl, qrtoken, apiver, verify=False):
         self.qrurl = qrurl
@@ -235,4 +233,4 @@ class qrhelper(object):
 # print(a.post_bulkreftable('UsrDataTable', json_data))
 # qry = "SELECT * FROM events START '2020-06-10 10:00' STOP '2020-06-10 13:00'"
 # print(a.run_aql(qry))
-# a.close_offense(6,'Non-Issue')
+# a.close_offense(999,'Non-Issue')
