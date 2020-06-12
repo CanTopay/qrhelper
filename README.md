@@ -11,7 +11,7 @@ Provide below params while instancing the class;
 Exp Usage:
 - a = qrhelper('https://192.168.1.1', 'token-xxxx-xxxx-xxxx-xxxxxxxxxxx', '12.0')
 - a.close_offense(999, 'Non-Issue')
-- Also check inline comments for more examples and format.
+- Also check inline comments for more examples and data formats.
   
 Note: Supports logging to a file in script directory(qrhelper.py.log) and also console output.
 

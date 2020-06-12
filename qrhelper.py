@@ -219,20 +219,27 @@ class qrhelper(object):
             logger.error('Çannot find Closing Reason ID. Check logs and closing reason text:{}'.format(closing_reason_text))
         return closed
 
+
+
 # #Exp Usage:
+
 # a = qrhelper('https://192.168.1.1','token-xxxx-xxxx-xxxx-xxxxxxxxxxx','12.0')
-# print(a.get_refset('QRadar Deployment'))
+
 # print(a.post_refset('Critical Assets','192.168.199.199'))
-# print(a.get_refmap('userDataMap'))
-# print(a.get_reftable('UsrDataTable'))
+
 # json_data = {"key":"CAN","value":"192.168.1.1"}
 # print(a.post_refmap('userDataMap', json_data))
+
 # json_data = {"CAN":"192.168.1.1", "ADMIN":"192.168.1.1", "GUEST":"192.168.1.9"}
 # print(a.post_bulkrefmap('userDataMap', json_data))
+
 # json_data = {"outer_key":"CAN", "inner_key": "ip", "value":"192.168.1.1"}
 # print(a.post_reftable('UsrDataTable', json_data))
+
 # json_data = {"ADMIN":{"ip":"192.168.1.1", "hostname":"ADMINSYS", "email":"admin@admin.com","employeeid":"999","vuln":"INFO-99"}}
 # print(a.post_bulkreftable('UsrDataTable', json_data))
+
 # qry = "SELECT * FROM events START '2020-06-10 10:00' STOP '2020-06-10 13:00'"
 # print(a.run_aql(qry))
+
 # a.close_offense(999,'Non-Issue')
