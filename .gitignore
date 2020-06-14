@@ -128,9 +128,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Macbook Dir
+# My Dir
 .DS_Store
 .vscode/
 *.pem
 *.cer
 tester.py
+*.db
