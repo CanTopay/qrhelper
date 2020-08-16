@@ -31,6 +31,7 @@ Note: Supports logging to a file in script directory(qrhelper.py.log) and also c
 -    get_refset: Get contents of the refset.
 -    get_refmap: Get contents of the refmap.
 -    get_reftable: Get contents of the reftable.
+-    chk_refdata_obj: Check the ref data object and info.
 -    post_refset: Post an item into a refset.
 -    post_refmap: Post a key:value pair into a refmap.
 -    post_bulkrefmap: Bulk post a list of key:value pairs(json) into a refmap.
@@ -41,3 +42,4 @@ Note: Supports logging to a file in script directory(qrhelper.py.log) and also c
 -    get_aql_results: Get the AQL query result set using a search_id.
 -    run_aql: Post an AQL query and get the query result set. (limited with a timeframe, check code and inline comments for modifiying.)
 -    close_offense: Close an offense by offense id, supports text based input for offense closing reasons.
+-    create_refmap: Creates a refmap with the given type and name.

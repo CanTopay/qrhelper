@@ -35,8 +35,7 @@ class qrhelper(object):
         self.source_addresses = '/api/siem/source_addresses/{}'
         self.local_destination_addresses = '/api/siem/local_destination_addresses/{}'
         self.headers = {"Accept": "application/json", "Content-Type": "application/json", "Version": apiver ,"SEC": qrtoken}
-        self.verify = verify
-        #Better to verify TLS in prd. => verify=True
+        self.verify = verify # #Better to verify certs in prd. => verify=True
 
     def qr_get(self, endpoint_url):
         result = None
@@ -67,7 +66,7 @@ class qrhelper(object):
         return result
 
     def get_offenses(self, max_items=None, open=None):
-        ## https://server.com/api/siem/offenses?filter=status%3D%22OPEN%22
+        ## https://qradar/api/siem/offenses?filter=status%3D%22OPEN%22
         ##To limit max_items=99
         if max_items:
             self.headers.update({"Range": "items=0-%d" % max_items})
@@ -85,10 +84,10 @@ class qrhelper(object):
         return qrhelper.qr_get(self,'{}/{}/notes'.format(self.offenses, offenseid))
 
     def get_source_addresses(self, sip_id):
-        return qrhelper.qr_get(self, '{}'.format(self.source_addresses.format(sip_id)))
+        return qrhelper.qr_get(self, '{}'.format(self.source_addresses.format(sip_id)))['source_ip']
     
     def get_local_destination_addresses(self, dip_id):
-        return qrhelper.qr_get(self, '{}'.format(self.local_destination_addresses.format(dip_id)))
+        return qrhelper.qr_get(self, '{}'.format(self.local_destination_addresses.format(dip_id)))['local_destination_ip']
     
     def get_rules(self, max_items=None):
         ##To limit max_items=99
@@ -123,7 +122,7 @@ class qrhelper(object):
                 return index_name
 
     def get_logsources(self, max_items=None, enabled=None):
-        ##https://server.com/api/siem/offenses?filter=status%3D%22OPEN%22
+        ##https://qradar/api/siem/offenses?filter=status%3D%22OPEN%22
         ##To filter disabled enabled=True.
         ##To limit max_items=99
         if max_items:
@@ -144,6 +143,19 @@ class qrhelper(object):
     def get_reftable(self, reftable):
         # #./ReferenceDataUtil.sh create UsrDataTable REFTABLE ALN -keyType=ip:IP, hostname:ALNIC, email:ALN, employeeid:ALN, vuln:ALN
         return qrhelper.qr_get(self, '{}/tables/{}'.format(self.reference_data, reftable))
+
+    def get_aql_results(self, search_id):
+        results = None
+        qry = qrhelper.qr_get(self, '{}/{}'.format(self.searches, search_id))
+        if qry and qry['status'] == 'COMPLETED':
+            results = qrhelper.qr_get(self, '{}/{}/results'.format(self.searches, search_id))
+        else:
+            pass
+        return results
+
+    def chk_refdata_obj(self, obj_type, name):
+        # #obj_type as maps, map_of_sets, tables and name of the object
+        return qrhelper.qr_get(self, '{}/{}/{}'.format(self.reference_data, obj_type, name))
 
     def post_refset(self, refset, value):
         #Data format should match the data type of refset - IP, ALN, etc.
@@ -179,15 +191,6 @@ class qrhelper(object):
             logger.info('AQL post successful.search_id:{}'.format(search_id))
         return search_id
 
-    def get_aql_results(self, search_id):
-        results = None
-        qry = qrhelper.qr_get(self, '{}/{}'.format(self.searches, search_id))
-        if qry and qry['status'] == 'COMPLETED':
-            results = qrhelper.qr_get(self, '{}/{}/results'.format(self.searches, search_id))
-        else:
-            pass
-        return results
-
     def run_aql(self, qry_ex):
     #NOTE: run_aql() can take long time and might hammer the system if you have many results or long timeframes.
     # #Therefore I limit execs up to 10 and put a sleep for 1 secs between them.
@@ -216,30 +219,26 @@ class qrhelper(object):
             else:
                 logger.error('Cannot close offense.Offense ID:{}'.format(offense_id))
         else:
-            logger.error('Çannot find Closing Reason ID. Check logs and closing reason text:{}'.format(closing_reason_text))
+            logger.error('Cannot find Closing Reason ID. Check logs and closing reason text:{}'.format(closing_reason_text))
         return closed
 
-
+    def create_refmap(self, element_type, name):
+        # curl -s -X POST -u admin -H 'Version: 12.0' -H 'Accept: application/json' 'https://qradar/api/reference_data/maps?element_type=ALN&name=tester'
+        return qrhelper.qr_post(self, '{}/maps?element_type={}&name={}'.format(self.reference_data, element_type, name))
 
 # #Exp Usage:
-
-# a = qrhelper('https://192.168.1.1','token-xxxx-xxxx-xxxx-xxxxxxxxxxx','12.0')
-
+# import keyring
+# a = qrhelper('https://qradar', keyring.get_password('qr','can'), '12.0')
+# print(a.create_refmap('ALN','tester'))
 # print(a.post_refset('Critical Assets','192.168.199.199'))
-
 # json_data = {"key":"CAN","value":"192.168.1.1"}
 # print(a.post_refmap('userDataMap', json_data))
-
 # json_data = {"CAN":"192.168.1.1", "ADMIN":"192.168.1.1", "GUEST":"192.168.1.9"}
 # print(a.post_bulkrefmap('userDataMap', json_data))
-
 # json_data = {"outer_key":"CAN", "inner_key": "ip", "value":"192.168.1.1"}
 # print(a.post_reftable('UsrDataTable', json_data))
-
 # json_data = {"ADMIN":{"ip":"192.168.1.1", "hostname":"ADMINSYS", "email":"admin@admin.com","employeeid":"999","vuln":"INFO-99"}}
 # print(a.post_bulkreftable('UsrDataTable', json_data))
-
 # qry = "SELECT * FROM events START '2020-06-10 10:00' STOP '2020-06-10 13:00'"
 # print(a.run_aql(qry))
-
 # a.close_offense(999,'Non-Issue')
