@@ -6,7 +6,7 @@ Provide below params while instancing the class;
 - Qradar URL
 - Qradar API Token (Authorized Service)
 - API Version
-- TSL Verification (Default = False)
+- TLS Verification
   
 Exp Usage:
 - a = qrhelper('https://192.168.1.1', 'token-xxxx-xxxx-xxxx-xxxxxxxxxxx', '12.0')
